@@ -1,5 +1,4 @@
 ﻿using SPTarkov.Server.Core.Models.Eft.Common;
-using SPTarkov.Server.Core.Models.Logging;
 using SPTarkov.Server.Core.Models.Utils;
 using SPTarkov.Server.Core.Services;
 
