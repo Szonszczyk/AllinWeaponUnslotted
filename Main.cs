@@ -29,11 +29,11 @@ public class AllinWeaponUnslotted(
         Fixes fixes = new (logger, databaseService);
         fixes.RunFixes();
 
-        var text = "Fucked: ";
+        var text = "Fcked: ";
         if (configLoader.Config.FckWeapons) text += "weapons, ";
         if (configLoader.Config.FckMods) text += "mods, ";
         if (configLoader.Config.FckMagazines) text += "magazines.";
-        if (text == "Fucked: ") text = "";
+        if (text == "Fcked: ") text = "";
         if (configLoader.Config.RemoveConflictingItems) text += " Removed conflicting items in mod slots. ";
         if (configLoader.Config.RemoveRequiredSlots) text += " WARN: Removed required slots!";
 
