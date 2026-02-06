@@ -1,0 +1,32 @@
+﻿<Project Sdk="Microsoft.NET.Sdk.Web">
+
+  <PropertyGroup>
+    <TargetFramework>net9.0</TargetFramework>
+    <RootNamespace>AllinWeaponUnslotted</RootNamespace>
+    <ImplicitUsings>enable</ImplicitUsings>
+    <Nullable>enable</Nullable>
+    <OutputType>Library</OutputType>
+    <Version>1.0.0</Version>
+    <!-- The two lines below will set the output path for the binaries -->
+    <OutputPath>bin\$(Configuration)\$(ProjectName)\$(AssemblyName)\</OutputPath>
+    <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
+    <Authors>Szonszczyk</Authors>
+  </PropertyGroup>
+
+  <ItemGroup>
+    <Compile Remove="ModCompatibility\**" />
+    <Content Remove="ModCompatibility\**" />
+    <EmbeddedResource Remove="ModCompatibility\**" />
+    <None Remove="ModCompatibility\**" />
+  </ItemGroup>
+
+  <ItemGroup>
+    <PackageReference Include="SPTarkov.Common" Version="4.0.4" />
+    <PackageReference Include="SPTarkov.DI" Version="4.0.4" />
+    <PackageReference Include="SPTarkov.Server.Core" Version="4.0.4" />
+  </ItemGroup>
+
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+    <Exec Command="echo f | xcopy /s /y /f &quot;C:\Programowanie\SPT 4.0 Mods\AllinWeaponUnslotted\bin\Debug\AllinWeaponUnslotted\AllinWeaponUnslotted.dll&quot; &quot;C:\Games\SPT 4.0 - Copy\SPT\user\mods\AllinWeaponUnslotted\AllinWeaponUnslotted.dll&quot;&#xD;&#xA;echo f | xcopy /s /y /f &quot;C:\Programowanie\SPT 4.0 Mods\AllinWeaponUnslotted\bin\Debug\AllinWeaponUnslotted\AllinWeaponUnslotted.pdb&quot; &quot;C:\Games\SPT 4.0 - Copy\SPT\user\mods\AllinWeaponUnslotted\AllinWeaponUnslotted.pdb&quot;" />
+  </Target>
+</Project>

@@ -1,0 +1,18 @@
+{
+ // Config of Szonszczyk - All in Weapon: Unslotted
+
+
+ "ModEnabled": true, // true/false - default: true
+ // Changing this value to false will disable the mod
+
+ // Use any mod in any weapon slot
+ "FckWeapons": true, // true/false - default: true
+ // Use any mod in any mod slot
+ "FckMods": true, // true/false - default: true
+ // Use any magazine with any weapon
+ // Use any bullet with any magazine and weapon
+ "FckMagazines": true, // true/false - default: true
+
+ // Removes Conflicting Items filter from mods
+ "RemoveConflictingItems": true, // true/false - default: true
+}

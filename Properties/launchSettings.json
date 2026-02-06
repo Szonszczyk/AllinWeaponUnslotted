@@ -1,0 +1,12 @@
+{
+  "profiles": {
+    "AllInWeapon": {
+      "commandName": "Project"
+    },
+    "SPT 4.0": {
+      "commandName": "Executable",
+      "executablePath": "C:\\Games\\SPT 4.0 - Copy\\SPT\\SPT.Server.exe",
+      "workingDirectory": "C:\\Games\\SPT 4.0 - Copy\\SPT\\"
+    }
+  }
+}
