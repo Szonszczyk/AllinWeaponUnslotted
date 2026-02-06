@@ -4,7 +4,7 @@ namespace AllinWeaponUnslotted
 {
     public record ModMetadata : AbstractModMetadata
     {
-        public override string ModGuid { get; init; } = "com.szonszczyk.AllinWeaponUnslotted";
+        public override string ModGuid { get; init; } = "com.szonszczyk.allinweaponunslotted";
         public override string Name { get; init; } = "All In Weapon: Unslotted";
         public override string Author { get; init; } = "Szonszczyk";
         public override List<string>? Contributors { get; init; }
