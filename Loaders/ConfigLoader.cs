@@ -46,7 +46,7 @@ namespace AllinWeaponUnslotted.Loaders
                 }
 
                 Config = config;
-                logger.LogWithColor($"[{GetType().Namespace}] Config loaded successfully.", LogTextColor.Green);
+                //logger.LogWithColor($"[{GetType().Namespace}] Config loaded successfully.", LogTextColor.Green);
             }
             catch (Exception ex)
             {
