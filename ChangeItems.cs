@@ -3,8 +3,11 @@ using AllinWeaponUnslotted.Loaders;
 using SPTarkov.Server.Core.Helpers;
 using SPTarkov.Server.Core.Models.Common;
 using SPTarkov.Server.Core.Models.Eft.Common.Tables;
+using SPTarkov.Server.Core.Models.Logging;
 using SPTarkov.Server.Core.Models.Utils;
 using SPTarkov.Server.Core.Services;
+using System.Collections.Generic;
+using static System.Net.Mime.MediaTypeNames;
 
 
 namespace AllinWeaponUnslotted
@@ -20,21 +23,21 @@ namespace AllinWeaponUnslotted
         private readonly ConfigData modConfig = configLoader.Config;
         private readonly Dictionary<MongoId, HashSet<MongoId>> modCache = [];
 
+        private readonly List<string> weaponCategories = [
+            "5447b5fc4bdc2d87278b4567",
+            "5447b5f14bdc2d61278b4567",
+            "5447b6254bdc2dc3278b4568",
+            "5447b6194bdc2d67278b4567",
+            "5447bed64bdc2d97278b4568",
+            "5447b5e04bdc2d62278b4567",
+            "5447b5cf4bdc2d65278b4567",
+            "5447b6094bdc2dc3278b4567",
+            "617f1ef5e8b54b0998387733",
+            "5447bedf4bdc2d87278b4568"
+        ];
+
         public void FckWeapons()
         {
-            List<string> weaponCategories = [
-                "5447b5fc4bdc2d87278b4567",
-                "5447b5f14bdc2d61278b4567",
-                "5447b6254bdc2dc3278b4568",
-                "5447b6194bdc2d67278b4567",
-                "5447bed64bdc2d97278b4568",
-                "5447b5e04bdc2d62278b4567",
-                "5447b5cf4bdc2d65278b4567",
-                "5447b6094bdc2dc3278b4567",
-                "617f1ef5e8b54b0998387733",
-                "5447bedf4bdc2d87278b4568"
-            ];
-
             foreach (var categoryId in weaponCategories)
             {
                 var weaponsInCategory = LoadFromCache(categoryId);
@@ -98,6 +101,8 @@ namespace AllinWeaponUnslotted
         {
             foreach (var (categoryId, itemList) in modCache.ToList())
             {
+                if (weaponCategories.Contains(categoryId)) continue;
+
                 foreach (var id in itemList)
                 {
                     var item = items[id];
