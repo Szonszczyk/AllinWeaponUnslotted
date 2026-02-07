@@ -96,7 +96,7 @@ namespace AllinWeaponUnslotted
         }
         public void FckMods()
         {
-            foreach (var (_, itemList) in modCache.ToList())
+            foreach (var (categoryId, itemList) in modCache.ToList())
             {
                 foreach (var id in itemList)
                 {
@@ -130,7 +130,7 @@ namespace AllinWeaponUnslotted
                         }
                     }
 
-                    if (modConfig.FckMagazines && item?.Properties?.Cartridges is not null)
+                    if (modConfig.FckMagazines && categoryId == "5448bc234bdc2d3c308b4569" && item?.Properties?.Cartridges is not null)
                     {
                         foreach (var cartridge in item.Properties.Cartridges)
                         {
