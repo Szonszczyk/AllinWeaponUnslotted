@@ -14,5 +14,5 @@
  "FckMagazines": true, // true/false - default: true
 
  // Removes Conflicting Items filter from mods
- "RemoveConflictingItems": true, // true/false - default: true
+ "RemoveConflictingItems": true // true/false - default: true
 }
