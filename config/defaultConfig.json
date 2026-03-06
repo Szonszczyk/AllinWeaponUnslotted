@@ -10,9 +10,16 @@
  // Use any mod in any mod slot
  "FckMods": true, // true/false - default: true
  // Use any magazine with any weapon
- // Use any bullet with any magazine and weapon
  "FckMagazines": true, // true/false - default: true
+ // Use any bullet with any magazine and weapon
+ "FckBullets": true, // true/false - default: true
+
+ "FckALL": false, // true/false - default: false
 
  // Removes Conflicting Items filter from mods
- "RemoveConflictingItems": true // true/false - default: true
+ "RemoveConflictingItems": true, // true/false - default: true
+
+ // Enables different way to "unslot" slots, can help when the game (client) is not loading
+ // Can have some strange interactions with different mods
+ "Experimental": true // true/false - default: false
 }

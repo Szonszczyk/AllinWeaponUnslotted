@@ -13,29 +13,37 @@ public class AllinWeaponUnslotted(
     ISptLogger<AllinWeaponUnslotted> logger,
     ModHelper modHelper,
     DatabaseService databaseService,
-    ItemHelper itemHelper
+    ItemHelper itemHelper,
+    ConfigLoader _configLoader,
+    ChangeItems _changeItems
 ) : IOnLoad
 {
+    public ConfigLoader ConfigLoaderF { get; } = _configLoader;
+    public ChangeItems ChangeItemsF { get; } = _changeItems;
+    
+
     public Task OnLoad()
     {
-        ConfigLoader configLoader = new(logger, modHelper);
+        if (!ConfigLoaderF.Config.ModEnabled) return Task.CompletedTask;
 
-        if (!configLoader.Config.ModEnabled) return Task.CompletedTask;
-
-        ChangeItems changeItems = new(logger, databaseService, itemHelper, configLoader);
-        changeItems.FckWeapons();
-        changeItems.FckMods();
+        ChangeItemsF.LoadDatabase(databaseService);
+        ChangeItemsF.LoadAttachments();
+        ChangeItemsF.FckWeapons();
+        ChangeItemsF.FckMods();
+        ChangeItemsF.FckBullets();
 
         Fixes fixes = new (logger, databaseService);
         fixes.RunFixes();
 
         var text = "Fcked: ";
-        if (configLoader.Config.FckWeapons) text += "weapons, ";
-        if (configLoader.Config.FckMods) text += "mods, ";
-        if (configLoader.Config.FckMagazines) text += "magazines.";
+        if (ConfigLoaderF.Config.FckWeapons) text += "weapons, ";
+        if (ConfigLoaderF.Config.FckMods) text += "mods, ";
+        if (ConfigLoaderF.Config.FckBullets) text += "bullets, ";
+        if (ConfigLoaderF.Config.FckMagazines) text += "magazines.";
+        if (ConfigLoaderF.Config.FckALL) text = "FCK THEM ALL";
         if (text == "Fcked: ") text = "";
-        if (configLoader.Config.RemoveConflictingItems) text += " Removed conflicting items in mod slots. ";
-        if (configLoader.Config.RemoveRequiredSlots) text += " WARN: Removed required slots!";
+        if (ConfigLoaderF.Config.RemoveConflictingItems) text += " Removed conflicting items in mod slots. ";
+        if (ConfigLoaderF.Config.RemoveRequiredSlots) text += " WARN: Removed required slots!";
 
         logger.LogWithColor($"[{GetType().Namespace}] Mod finished loading. {text}", LogTextColor.Green);
 

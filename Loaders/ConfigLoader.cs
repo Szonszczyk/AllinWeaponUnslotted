@@ -1,4 +1,6 @@
 ﻿using AllinWeaponUnslotted.Interfaces;
+using SPTarkov.DI.Annotations;
+using SPTarkov.Server.Core.DI;
 using SPTarkov.Server.Core.Helpers;
 using SPTarkov.Server.Core.Models.Logging;
 using SPTarkov.Server.Core.Models.Utils;
@@ -6,6 +8,7 @@ using System.Reflection;
 
 namespace AllinWeaponUnslotted.Loaders
 {
+    [Injectable(TypePriority = OnLoadOrder.PostDBModLoader + 97221)]
     public class ConfigLoader
     {
         public ConfigData Config { get; }
@@ -14,8 +17,8 @@ namespace AllinWeaponUnslotted.Loaders
         {
             string modFolder = modHelper.GetAbsolutePathToModFolder(Assembly.GetExecutingAssembly());
             string configDir = Path.Combine(modFolder, "config");
-            string configPath = Path.Combine(configDir, "config.jsonc");
-            string defaultConfigPath = Path.Combine(configDir, "defaultConfig.jsonc");
+            string configPath = Path.Combine(configDir, "config.json");
+            string defaultConfigPath = Path.Combine(configDir, "defaultConfig.json");
 
             try
             {
@@ -24,12 +27,12 @@ namespace AllinWeaponUnslotted.Loaders
                 {
                     if (File.Exists(defaultConfigPath))
                     {
-                        logger.LogWithColor($"[{GetType().Namespace}] Config file not found. Copying defaultConfig.jsonc to config.jsonc...", LogTextColor.Yellow);
+                        logger.LogWithColor($"[{GetType().Namespace}] Config file not found. Copying defaultConfig.json to config.json...", LogTextColor.Yellow);
                         File.Copy(defaultConfigPath, configPath);
                     }
                     else
                     {
-                        logger.LogWithColor($"[{GetType().Namespace}] Neither config.jsonc nor defaultConfig.jsonc found in {configDir}. Using built-in defaults.", LogTextColor.Red);
+                        logger.LogWithColor($"[{GetType().Namespace}] Neither config.json nor defaultConfig.json found in {configDir}. Using built-in defaults.", LogTextColor.Red);
                         Config = new ConfigData();
                         return;
                     }

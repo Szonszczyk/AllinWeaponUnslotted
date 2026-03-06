@@ -21,7 +21,7 @@
   </ItemGroup>
 
   <ItemGroup>
-    <Content Include="config\defaultConfig.jsonc" />
+    <None Include="config\defaultConfig.json" />
   </ItemGroup>
 
   <ItemGroup>

@@ -1,25 +1,24 @@
 ﻿using AllinWeaponUnslotted.Interfaces;
 using AllinWeaponUnslotted.Loaders;
+using SPTarkov.DI.Annotations;
+using SPTarkov.Server.Core.DI;
 using SPTarkov.Server.Core.Helpers;
 using SPTarkov.Server.Core.Models.Common;
 using SPTarkov.Server.Core.Models.Eft.Common.Tables;
-using SPTarkov.Server.Core.Models.Logging;
 using SPTarkov.Server.Core.Models.Utils;
 using SPTarkov.Server.Core.Services;
-using System.Collections.Generic;
-using static System.Net.Mime.MediaTypeNames;
 
 
 namespace AllinWeaponUnslotted
 {
-    internal class ChangeItems(
+    [Injectable(TypePriority = OnLoadOrder.PostDBModLoader + 97222)]
+    public class ChangeItems(
         ISptLogger<AllinWeaponUnslotted> logger,
-        DatabaseService databaseService,
         ItemHelper itemHelper,
         ConfigLoader configLoader
     )
     {
-        private readonly Dictionary<MongoId, TemplateItem> items = databaseService.GetItems();
+        private Dictionary<MongoId, TemplateItem> items = [];
         private readonly ConfigData modConfig = configLoader.Config;
         private readonly Dictionary<MongoId, HashSet<MongoId>> modCache = [];
 
@@ -36,7 +35,62 @@ namespace AllinWeaponUnslotted
             "5447bedf4bdc2d87278b4568"
         ];
 
-        public void FckWeapons()
+        private readonly HashSet<string> attachmentCategories = [
+            "5447b5fc4bdc2d87278b4567",
+            "55818a594bdc2db9688b456a",
+            "555ef6e44bdc2de9068b457e",
+            "5448bc234bdc2d3c308b4569",
+            "55818a304bdc2db5418b457d",
+            "550aa4cd4bdc2dd8348b456c",
+            "55818a684bdc2ddd698b456d",
+            "55818a6f4bdc2db9688b456b",
+            "55818ad54bdc2ddc698b4569",
+            "55818ae44bdc2dde698b456c",
+            "55818aeb4bdc2ddc698b456a",
+            "55818b224bdc2dde698b456f",
+            "55818a104bdc2db9688b4569",
+            "56ea9461d2720b67698b456f",
+            "55818ac54bdc2d5b648b456e",
+            "55818af64bdc2d5b648b4570",
+            "550aa4bf4bdc2dd6348b456b",
+            "550aa4dd4bdc2dc9348b4569",
+            "55818b014bdc2ddc698b456b",
+            "5447b5f14bdc2d61278b4567",
+            "55818add4bdc2d5b648b456f",
+            "55818acf4bdc2dde698b456b",
+            "55818b164bdc2ddc698b456c",
+            "55802f3e4bdc2de7118b4584",
+            "5447b6254bdc2dc3278b4568",
+            "5a74651486f7744e73386dd1",
+            "5447b6194bdc2d67278b4567",
+            "5447bed64bdc2d97278b4568",
+            "55818afb4bdc2dde698b456d",
+            "5447b5e04bdc2d62278b4567",
+            "5447b5cf4bdc2d65278b4567",
+            "5447b6094bdc2dc3278b4567",
+            "617f1ef5e8b54b0998387733",
+            "610720f290b75a49ff2e5e25",
+            "627a137bf21bc425b06ab944",
+            "5447bedf4bdc2d87278b4568"
+        ];
+
+        private HashSet<MongoId> attachmentCategoriesMongoId = [];
+
+        public void LoadDatabase(DatabaseService databaseService)
+        {
+            items = databaseService.GetItems();
+            attachmentCategoriesMongoId = [.. attachmentCategories.Select(x => new MongoId(x))];
+        }
+
+        public void LoadAttachments()
+        {
+            foreach(var categoryId in attachmentCategories)
+            {
+                LoadFromCache(categoryId);
+            }
+        }
+
+        public void FckWeapons(bool unFck = false)
         {
             foreach (var categoryId in weaponCategories)
             {
@@ -62,15 +116,32 @@ namespace AllinWeaponUnslotted
                             var filters = filtersEnumerable.ToList();
                             if (filters.Count == 0) continue;
 
-                            var categories = DeterminateSlotCategory([.. filters[0].Filter]);
-                            var newFilter = new HashSet<MongoId>();
-
-                            foreach (var category in categories)
+                            if (!unFck)
                             {
-                                newFilter.UnionWith(LoadFromCache(category));
-                            }
+                                var categories = DeterminateSlotCategory([.. filters[0].Filter]);
 
-                            filters[0].Filter = newFilter;
+                                foreach (var category in categories)
+                                {
+                                    if (modConfig.FckALL)
+                                    {
+                                        filters[0]?.Filter?.UnionWith([.. attachmentCategories]);
+                                        continue;
+                                    }
+                                    if (modConfig.Experimental)
+                                    {
+                                        filters[0]?.Filter?.UnionWith([category]);
+                                        LoadFromCache(category);
+                                    }
+                                    else
+                                    {
+                                        filters[0]?.Filter?.UnionWith(LoadFromCache(category));
+                                    }
+                                }
+                            } else
+                            {
+                                var newSlot = RemoveCategories([.. filters[0].Filter]);
+                                filters[0].Filter = newSlot;
+                            }
 
                             if (slot?.Properties?.Filters is null) continue;
                             slot.Properties.Filters = filters;
@@ -78,7 +149,7 @@ namespace AllinWeaponUnslotted
                             if (modConfig.RemoveRequiredSlots) slot.Required = false;
                         }
                     }
-                    if (modConfig.FckMagazines && item?.Properties?.Chambers is not null)
+                    if (modConfig.FckBullets && item?.Properties?.Chambers is not null)
                     {
                         foreach (var chamber in item.Properties.Chambers)
                         {
@@ -88,8 +159,21 @@ namespace AllinWeaponUnslotted
                             var filters = filtersEnumerable.ToList();
                             if (filters.Count == 0) continue;
 
-                            filters[0].Filter = LoadFromCache("5485a8684bdc2da71d8b4567");
-
+                            if (!unFck)
+                            {
+                                if (modConfig.Experimental)
+                                {
+                                    filters[0]?.Filter?.Add("5485a8684bdc2da71d8b4567");
+                                }
+                                else
+                                {
+                                    filters[0].Filter = LoadFromCache("5485a8684bdc2da71d8b4567");
+                                }
+                            } else
+                            {
+                                var newSlot = RemoveCategories([.. filters[0].Filter]);
+                                filters[0].Filter = newSlot;
+                            }
                             if (chamber?.Properties?.Filters is null) continue;
                             chamber.Properties.Filters = filters;
                         }
@@ -97,7 +181,7 @@ namespace AllinWeaponUnslotted
                 }
             }
         }
-        public void FckMods()
+        public void FckMods(bool unFck = false)
         {
             foreach (var (categoryId, itemList) in modCache.ToList())
             {
@@ -118,42 +202,88 @@ namespace AllinWeaponUnslotted
                             var filters = filtersEnumerable.ToList();
                             if (filters.Count == 0 || filters[0].Filter is null) continue;
 
-                            var categories = DeterminateSlotCategory([.. filters[0].Filter]);
-                            var newFilter = new HashSet<MongoId>();
-
-                            foreach (var category in categories)
+                            if (!unFck)
                             {
-                                newFilter.UnionWith(LoadFromCache(category));
+                                var categories = DeterminateSlotCategory([.. filters[0].Filter]);
+
+                                foreach (var category in categories)
+                                {
+                                    if (modConfig.FckALL)
+                                    {
+                                        filters[0]?.Filter?.UnionWith([.. attachmentCategories]);
+                                        continue;
+                                    }
+                                    if (modConfig.Experimental)
+                                    {
+                                        filters[0]?.Filter?.UnionWith([category]);
+                                    }
+                                    else
+                                    {
+                                        filters[0]?.Filter?.UnionWith(LoadFromCache(category));
+                                    }
+                                }
+                                if (modConfig.RemoveRequiredSlots) slot.Required = false;
                             }
-
-                            filters[0].Filter = newFilter;
-
+                            else
+                            {
+                                var newSlot = RemoveCategories([.. filters[0].Filter]);
+                                filters[0].Filter = newSlot;
+                            }
                             if (slot?.Properties?.Filters is null) continue;
                             slot.Properties.Filters = filters;
-
-                            if (modConfig.RemoveRequiredSlots) slot.Required = false;
-                        }
-                    }
-
-                    if (modConfig.FckMagazines && categoryId == "5448bc234bdc2d3c308b4569" && item?.Properties?.Cartridges is not null)
-                    {
-                        foreach (var cartridge in item.Properties.Cartridges)
-                        {
-                            if (cartridge?.Properties?.Filters is null) continue;
-
-                            var filtersEnumerable = cartridge.Properties.Filters;
-                            if (filtersEnumerable == null) continue;
-                            var filters = filtersEnumerable.ToList();
-
-                            if (filters.Count == 0) continue;
-                            filters[0].Filter = LoadFromCache("5485a8684bdc2da71d8b4567");
-
-                            cartridge.Properties.Filters = filters;
                         }
                     }
                 }
             }
         }
+
+        public void FckBullets(bool unFck = false)
+        {
+            var magList = LoadFromCache("5448bc234bdc2d3c308b4569");
+
+            foreach (var id in magList)
+            {
+                var item = items[id];
+                if (modConfig.FckBullets && item?.Properties?.Cartridges is not null)
+                {
+                    foreach (var cartridge in item.Properties.Cartridges)
+                    {
+                        if (cartridge?.Properties?.Filters is null) continue;
+
+                        var filtersEnumerable = cartridge.Properties.Filters;
+                        if (filtersEnumerable == null) continue;
+                        var filters = filtersEnumerable.ToList();
+
+                        if (filters.Count == 0) continue;
+
+                        if (!unFck)
+                        {
+
+                            if (modConfig.Experimental)
+                            {
+                                filters[0]?.Filter?.Add("5485a8684bdc2da71d8b4567");
+                            }
+                            else
+                            {
+                                filters[0].Filter = LoadFromCache("5485a8684bdc2da71d8b4567");
+                            }
+                            
+                        } else
+                        {
+                            filters[0]?.Filter?.Remove("5485a8684bdc2da71d8b4567");
+                        }
+                        cartridge.Properties.Filters = filters;
+                    }
+                }
+            } 
+        }
+
+        public HashSet<MongoId> RemoveCategories(HashSet<MongoId> oldList)
+        {
+            oldList.ExceptWith(attachmentCategoriesMongoId ?? []);
+            return oldList;
+        }
+
 
         private HashSet<MongoId> DeterminateSlotCategory(List<MongoId> oldList)
         {
