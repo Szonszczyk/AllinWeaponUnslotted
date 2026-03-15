@@ -9,10 +9,28 @@
  "FckWeapons": true, // true/false - default: true
  // Use any mod in any mod slot
  "FckMods": true, // true/false - default: true
+
+ // Use any bullet with any weapon
+ "FckChambers": true, // true/false - default: true
  // Use any magazine with any weapon
- // Use any bullet with any magazine and weapon
+ "FckCalibers": true, // true/false - default: true
+  // Use any bullet with any magazine
  "FckMagazines": true, // true/false - default: true
 
+ // If you allow only 2 out of 3 options:
+ // FckChambers + FckCalibers => allow all bullets in chambers, but if you want to use caliber, you need to find to find magazines matching this caliber (NOT RECOMMENDED)
+ // FckChambers + FckMagazines => allow all bullets in chambers and magazines, but only matching magazines are allowed in weapon
+ // FckCalibers + FckMagazines => allow all magazines in weapon and all bullets in magazine, basically you can use the best magazine you have with each weapon
+
+ // Unslot option on steroids, instead of adding only matching attachments categories to filter slot it is adding all of them!
+ // This is working on experimental "unslot" logic
+ // You are enabling this option to your own risk!
+ "FckALL": false, // true/false - default: false
+
  // Removes Conflicting Items filter from mods
- "RemoveConflictingItems": true // true/false - default: true
+ "RemoveConflictingItems": true, // true/false - default: true
+
+ // Enables different way to "unslot" slots, can help when the game (client) is not loading
+ // Can have some strange interactions with different mods
+ "Experimental": false // true/false - default: false
 }
