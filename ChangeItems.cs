@@ -89,45 +89,45 @@ namespace AllinWeaponUnslotted
                     var item = items[id];
                     if (item?.Properties?.Slots is null) continue;
 
-                    if (modConfig.FckWeapons)
+                    foreach (var slot in item.Properties.Slots)
                     {
-                        foreach (var slot in item.Properties.Slots)
+                        // Compatibility with Definitive Weapon Variants
+                        if (slot.Name == "mod_core") continue;
+
+                        // Don't touch magazine slot if that option is disabled
+                        if (slot.Name == "mod_magazine" && !modConfig.FckCalibers) continue;
+
+                        if (slot.Name != "mod_magazine" && !modConfig.FckWeapons) continue;
+
+                        var filtersEnumerable = slot.Properties?.Filters;
+                        if (filtersEnumerable == null) continue;
+
+                        var filters = filtersEnumerable.ToList();
+                        if (filters.Count == 0) continue;
+
+                        var categories = DeterminateSlotCategory([.. filters[0].Filter]);
+
+                        foreach (var category in categories)
                         {
-                            // Compatibility with Definitive Weapon Variants
-                            if (slot.Name == "mod_core") continue;
-
-                            // Don't touch magazine slot if that option is disabled
-                            if (slot.Name == "mod_magazine" && !modConfig.FckCalibers) continue;
-
-                            var filtersEnumerable = slot.Properties?.Filters;
-                            if (filtersEnumerable == null) continue;
-
-                            var filters = filtersEnumerable.ToList();
-                            if (filters.Count == 0) continue;
-
-                            var categories = DeterminateSlotCategory([.. filters[0].Filter]);
-
-                            foreach (var category in categories)
+                            if (modConfig.FckALL)
                             {
-                                if (modConfig.FckALL)
-                                {
-                                    filters[0]?.Filter?.UnionWith([.. attachmentCategories]);
-                                    continue;
-                                }
-                                if (modConfig.Experimental)
-                                {
-                                    filters[0]?.Filter?.UnionWith([category]);
-                                    LoadFromCache(category);
-                                }
-                                else
-                                {
-                                    filters[0]?.Filter?.UnionWith(LoadFromCache(category));
-                                }
+                                filters[0]?.Filter?.UnionWith([.. attachmentCategories]);
+                                continue;
                             }
-
-                            if (slot?.Properties?.Filters is null) continue;
-                            slot.Properties.Filters = filters;
+                            if (modConfig.Experimental)
+                            {
+                                filters[0]?.Filter?.UnionWith([category]);
+                                LoadFromCache(category);
+                            }
+                            else
+                            {
+                                filters[0]?.Filter?.UnionWith(LoadFromCache(category));
+                            }
                         }
+
+                        if (slot?.Properties?.Filters is null) continue;
+                        slot.Properties.Filters = filters;
+
                     }
                     if (modConfig.FckChambers && item?.Properties?.Chambers is not null)
                     {
