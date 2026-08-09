@@ -1,34 +1,28 @@
+using AllinWeaponUnslotted.Helpers;
 using AllinWeaponUnslotted.Loaders;
 using SPTarkov.DI.Annotations;
 using SPTarkov.Server.Core.DI;
-using SPTarkov.Server.Core.Helpers;
-using SPTarkov.Server.Core.Models.Logging;
-using SPTarkov.Server.Core.Models.Utils;
-using SPTarkov.Server.Core.Services;
 
 namespace AllinWeaponUnslotted;
 
-[Injectable(TypePriority = OnLoadOrder.PostSptModLoader + 97223)]
+[Injectable(TypePriority = OnLoadOrder.PostLoad + 97223)]
 public class AllinWeaponUnslotted(
-    ISptLogger<AllinWeaponUnslotted> logger,
-    ModHelper modHelper,
-    DatabaseService databaseService,
-    ItemHelper itemHelper
+    CustomLogger logger,
+    ChangeItems changeItems,
+    ConfigLoader configLoader,
+    Fixes fixes
 ) : IOnLoad
 {
-    public Task OnLoad()
+    public Task OnLoadAsync(CancellationToken cancellationToken)
     {
-        ConfigLoader configLoader = new(logger, modHelper);
 
         if (!configLoader.Config.ModEnabled) return Task.CompletedTask;
 
-        ChangeItems changeItems = new(logger, databaseService, itemHelper, configLoader);
         changeItems.LoadAttachments();
         changeItems.FckWeapons();
         changeItems.FckMods();
         changeItems.FckMagazines();
 
-        Fixes fixes = new (logger, databaseService);
         fixes.RunFixes();
 
         var text = "Fcked: ";
@@ -41,7 +35,7 @@ public class AllinWeaponUnslotted(
         if (text == "Fcked: ") text = "";
         if (configLoader.Config.RemoveConflictingItems) text += " Removed conflicting items in mod slots.";
         if (configLoader.Config.Experimental) text += " Experimental mode has been enabled!";
-        logger.LogWithColor($"[{GetType().Namespace}] Mod finished loading. {text}", LogTextColor.Green);
+        logger.Ok($"Mod finished loading. {text}");
 
         return Task.CompletedTask;
     }

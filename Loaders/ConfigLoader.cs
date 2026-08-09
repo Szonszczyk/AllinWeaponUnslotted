@@ -1,58 +1,66 @@
-﻿using AllinWeaponUnslotted.Interfaces;
-using SPTarkov.Server.Core.Helpers;
-using SPTarkov.Server.Core.Models.Logging;
-using SPTarkov.Server.Core.Models.Utils;
+﻿using AllinWeaponUnslotted.Helpers;
+using AllinWeaponUnslotted.Interfaces;
+using SPTarkov.DI.Annotations;
 using System.Reflection;
+using System.Text.Json;
 
-namespace AllinWeaponUnslotted.Loaders
+namespace AllinWeaponUnslotted.Loaders;
+
+[Injectable(InjectionType.Singleton)]
+public class ConfigLoader
 {
-    public class ConfigLoader
+    public ConfigData Config { get; }
+
+    public ConfigLoader(CustomLogger logger)
     {
-        public ConfigData Config { get; }
+        string modFolder = Path.GetDirectoryName(Assembly.GetExecutingAssembly().Location)
+            ?? throw new InvalidOperationException("Unable to determine the mod directory.");
+        string configDir = Path.Combine(modFolder, "config");
+        string configPath = Path.Combine(configDir, "config.jsonc");
+        string defaultConfigPath = Path.Combine(configDir, "defaultConfig.jsonc");
 
-        public ConfigLoader(ISptLogger<AllinWeaponUnslotted> logger, ModHelper modHelper)
+        try
         {
-            string modFolder = modHelper.GetAbsolutePathToModFolder(Assembly.GetExecutingAssembly());
-            string configDir = Path.Combine(modFolder, "config");
-            string configPath = Path.Combine(configDir, "config.jsonc");
-            string defaultConfigPath = Path.Combine(configDir, "defaultConfig.jsonc");
-
-            try
+            // Check if config.jsonc exists
+            if (!File.Exists(configPath))
             {
-                // Check if config.jsonc exists
-                if (!File.Exists(configPath))
+                if (File.Exists(defaultConfigPath))
                 {
-                    if (File.Exists(defaultConfigPath))
-                    {
-                        logger.LogWithColor($"[{GetType().Namespace}] Config file not found. Copying defaultConfig.jsonc to config.jsonc...", LogTextColor.Yellow);
-                        File.Copy(defaultConfigPath, configPath);
-                    }
-                    else
-                    {
-                        logger.LogWithColor($"[{GetType().Namespace}] Neither config.jsonc nor defaultConfig.jsonc found in {configDir}. Using built-in defaults.", LogTextColor.Red);
-                        Config = new ConfigData();
-                        return;
-                    }
+                    logger.Warning($"Config file not found. Copying defaultConfig.jsonc to config.jsonc...");
+                    File.Copy(defaultConfigPath, configPath);
                 }
-
-                // Load config.jsonc
-                var config = modHelper.GetJsonDataFromFile<ConfigData>(modFolder, configPath);
-
-                if (config == null)
+                else
                 {
-                    logger.LogWithColor($"[{GetType().Namespace}] Config file is null. Loading default config.", LogTextColor.Red);
+                    logger.Error($"Neither config.jsonc nor defaultConfig.jsonc found in {configDir}. Using built-in defaults.");
                     Config = new ConfigData();
                     return;
                 }
+            }
 
-                Config = config;
-                //logger.LogWithColor($"[{GetType().Namespace}] Config loaded successfully.", LogTextColor.Green);
-            }
-            catch (Exception ex)
+            // Load config.jsonc
+            var config = JsonSerializer.Deserialize<ConfigData>(
+                File.ReadAllText(configPath),
+                new JsonSerializerOptions
+                {
+                    AllowTrailingCommas = true,
+                    ReadCommentHandling = JsonCommentHandling.Skip,
+                    PropertyNameCaseInsensitive = true
+                });
+
+            if (config == null)
             {
-                logger.LogWithColor($"[{GetType().Namespace}] Failed to load config: {ex.Message}", LogTextColor.Red);
+                logger.Error($"Config file is null. Loading default config.");
                 Config = new ConfigData();
+                return;
             }
+
+            Config = config;
+            //logger.LogWithColor($"[{GetType().Namespace}] Config loaded successfully.", LogTextColor.Green);
+        }
+        catch (Exception ex)
+        {
+            logger.Error($"Failed to load config: {ex.Message}");
+            Config = new ConfigData();
         }
     }
 }
