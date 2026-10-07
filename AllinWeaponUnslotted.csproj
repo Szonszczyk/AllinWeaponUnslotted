@@ -6,7 +6,7 @@
     <ImplicitUsings>enable</ImplicitUsings>
     <Nullable>enable</Nullable>
     <OutputType>Library</OutputType>
-    <Version>1.1.2</Version>
+    <Version>1.2.0</Version>
     <!-- The two lines below will set the output path for the binaries -->
     <OutputPath>bin\$(Configuration)\$(ProjectName)\$(AssemblyName)\</OutputPath>
     <AppendTargetFrameworkToOutputPath>false</AppendTargetFrameworkToOutputPath>
@@ -14,23 +14,31 @@
   </PropertyGroup>
 
   <ItemGroup>
-    <Compile Remove="ModCompatibility\**" />
-    <Content Remove="ModCompatibility\**" />
-    <EmbeddedResource Remove="ModCompatibility\**" />
-    <None Remove="ModCompatibility\**" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Content Include="config\defaultConfig.jsonc" />
-  </ItemGroup>
-
-  <ItemGroup>
     <PackageReference Include="SPTarkov.Common" Version="4.1.2" />
     <PackageReference Include="SPTarkov.DI" Version="4.1.2" />
     <PackageReference Include="SPTarkov.Server.Core" Version="4.1.2" />
   </ItemGroup>
 
-  <Target Name="PostBuild" AfterTargets="PostBuildEvent">
+	<Target Name="PackageModForDistribution" AfterTargets="Build" Condition="'$(SkipModPackaging)' != 'true'">
+		<PropertyGroup>
+			<ModName Condition="'$(ModName)' == ''">$(AssemblyName)</ModName>
+			<ZipFileName Condition="'$(ZipFileName)' == ''">$(ModName).zip</ZipFileName>
+			<TempPackageDir Condition="'$(TempPackageDir)' == ''">$(ProjectDir)obj\Package</TempPackageDir>
+			<ModPackageDir Condition="'$(ModPackageDir)' == ''">$(TempPackageDir)\SPT_Runtime\user\mods\$(ModName)</ModPackageDir>
+		</PropertyGroup>
+		<Message Text="--- Starting Mod packaging for distribution ---" Importance="high" />
+		<RemoveDir Directories="$(TempPackageDir)" />
+		<MakeDir Directories="$(ModPackageDir)" />
+		<MakeDir Directories="$(ModPackageDir)\config" />
+		<Copy SourceFiles="$(ProjectDir)config\defaultConfig.jsonc" DestinationFolder="$(ModPackageDir)\config" />
+		<Copy SourceFiles="$(TargetPath)" DestinationFolder="$(ModPackageDir)" />
+		<ZipDirectory SourceDirectory="$(TempPackageDir)" DestinationFile="$(ProjectDir)$(ZipFileName)" Overwrite="true" />
+		<RemoveDir Directories="$(TempPackageDir)" />
+		<Message Text="--- Mod successfully packaged at: $(ProjectDir)$(ZipFileName) ---" Importance="high" />
+	</Target>
+
+  <!-- Set SkipModDeployment=true to validate a build without copying it into SPT. -->
+  <Target Name="PostBuild" AfterTargets="PostBuildEvent" Condition="'$(SkipModDeployment)' != 'true'">
     <Exec Command="echo f | xcopy /s /y /f &quot;C:\Programowanie\SPT 4.0 Mods\AllinWeaponUnslotted\bin\Debug\AllinWeaponUnslotted\AllinWeaponUnslotted.dll&quot; &quot;C:\Games\SPT 4.1\SPT_Runtime\user\mods\AllinWeaponUnslotted\AllinWeaponUnslotted.dll&quot;&#xD;&#xA;echo f | xcopy /s /y /f &quot;C:\Programowanie\SPT 4.0 Mods\AllinWeaponUnslotted\bin\Debug\AllinWeaponUnslotted\AllinWeaponUnslotted.pdb&quot; &quot;C:\Games\SPT 4.1\SPT_Runtime\user\mods\AllinWeaponUnslotted\AllinWeaponUnslotted.pdb&quot;" />
   </Target>
 </Project>

@@ -8,20 +8,16 @@ namespace AllinWeaponUnslotted;
 [Injectable(TypePriority = OnLoadOrder.PostLoad + 97223)]
 public class AllinWeaponUnslotted(
     CustomLogger logger,
-    ChangeItems changeItems,
+    PlayerItemTemplates playerItemTemplates,
     ConfigLoader configLoader,
     Fixes fixes
 ) : IOnLoad
 {
     public Task OnLoadAsync(CancellationToken cancellationToken)
     {
-
         if (!configLoader.Config.ModEnabled) return Task.CompletedTask;
 
-        changeItems.LoadAttachments();
-        changeItems.FckWeapons();
-        changeItems.FckMods();
-        changeItems.FckMagazines();
+        playerItemTemplates.Prepare();
 
         fixes.RunFixes();
 

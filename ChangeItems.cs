@@ -1,24 +1,15 @@
-﻿using AllinWeaponUnslotted.Helpers;
 using AllinWeaponUnslotted.Interfaces;
-using AllinWeaponUnslotted.Loaders;
-using SPTarkov.DI.Annotations;
-using SPTarkov.Server.Core.Helpers.Items;
 using SPTarkov.Server.Core.Models.Common;
 using SPTarkov.Server.Core.Models.Eft.Common.Tables;
-using SPTarkov.Server.Core.Models.Spt.Tables;
 
 namespace AllinWeaponUnslotted;
 
-[Injectable(InjectionType.Singleton)]
+// Only use this class with the copied client templates, never the server database.
 public class ChangeItems(
-    CustomLogger logger,
-    ItemHelper itemHelper,
-    ConfigLoader configLoader,
-    TemplateTable templateTable
+    Dictionary<MongoId, TemplateItem> items,
+    ConfigData modConfig
 )
 {
-    private readonly Dictionary<MongoId, TemplateItem> items = templateTable.Items;
-    private readonly ConfigData modConfig = configLoader.Config;
     private readonly Dictionary<MongoId, HashSet<MongoId>> modCache = [];
 
     private readonly List<string> weaponCategories = [
@@ -73,19 +64,30 @@ public class ChangeItems(
         "5447bedf4bdc2d87278b4568"
     ];
 
-    public void LoadAttachments()
+    // Apply the configured restriction changes to the copied templates.
+    public void ApplyChanges()
+    {
+        LoadAttachments();
+        RelaxWeaponFilters();
+        RelaxAttachmentFilters();
+        RelaxMagazineFilters();
+    }
+
+    // Collect attachment IDs by category for the filter changes below.
+    private void LoadAttachments()
     {
         foreach (var categoryId in attachmentCategories)
         {
-            LoadFromCache(categoryId);
+            GetItemsInCategory(categoryId);
         }
     }
 
-    public void FckWeapons()
+    // Expand weapon attachment, magazine, and chamber filters as configured.
+    private void RelaxWeaponFilters()
     {
         foreach (var categoryId in weaponCategories)
         {
-            var weaponsInCategory = LoadFromCache(categoryId);
+            var weaponsInCategory = GetItemsInCategory(categoryId);
             foreach (var id in weaponsInCategory)
             {
                 var item = items[id];
@@ -107,7 +109,9 @@ public class ChangeItems(
                     var filters = filtersEnumerable.ToList();
                     if (filters.Count == 0) continue;
 
-                    var categories = DeterminateSlotCategory([.. filters[0].Filter]);
+                    var allowedItems = filters[0].Filter;
+                    if (allowedItems is null) continue;
+                    var categories = GetSlotCategories([.. allowedItems]);
 
                     foreach (var category in categories)
                     {
@@ -119,11 +123,11 @@ public class ChangeItems(
                         if (modConfig.Experimental)
                         {
                             filters[0]?.Filter?.UnionWith([category]);
-                            LoadFromCache(category);
+                            GetItemsInCategory(category);
                         }
                         else
                         {
-                            filters[0]?.Filter?.UnionWith(LoadFromCache(category));
+                            filters[0]?.Filter?.UnionWith(GetItemsInCategory(category));
                         }
                     }
 
@@ -147,7 +151,7 @@ public class ChangeItems(
                         }
                         else
                         {
-                            filters[0].Filter = LoadFromCache("5485a8684bdc2da71d8b4567");
+                            filters[0].Filter = GetItemsInCategory("5485a8684bdc2da71d8b4567");
                         }
 
                         if (chamber?.Properties?.Filters is null) continue;
@@ -157,7 +161,8 @@ public class ChangeItems(
             }
         }
     }
-    public void FckMods()
+    // Expand attachment subslots and remove attachment conflicts as configured.
+    private void RelaxAttachmentFilters()
     {
         foreach (var (categoryId, itemList) in modCache.ToList())
         {
@@ -178,7 +183,9 @@ public class ChangeItems(
                         var filters = filtersEnumerable.ToList();
                         if (filters.Count == 0 || filters[0].Filter is null) continue;
 
-                        var categories = DeterminateSlotCategory([.. filters[0].Filter]);
+                        var allowedItems = filters[0].Filter;
+                        if (allowedItems is null) continue;
+                        var categories = GetSlotCategories([.. allowedItems]);
 
                         foreach (var category in categories)
                         {
@@ -193,7 +200,7 @@ public class ChangeItems(
                             }
                             else
                             {
-                                filters[0]?.Filter?.UnionWith(LoadFromCache(category));
+                                filters[0]?.Filter?.UnionWith(GetItemsInCategory(category));
                             }
                         }
 
@@ -205,10 +212,11 @@ public class ChangeItems(
         }
     }
 
-    public void FckMagazines()
+    // Allow the configured ammunition types inside magazines.
+    private void RelaxMagazineFilters()
     {
         if (!modConfig.FckMagazines) return;
-        var magList = LoadFromCache("5448bc234bdc2d3c308b4569");
+        var magList = GetItemsInCategory("5448bc234bdc2d3c308b4569");
 
         foreach (var id in magList)
         {
@@ -231,7 +239,7 @@ public class ChangeItems(
                     }
                     else
                     {
-                        filters[0].Filter = LoadFromCache("5485a8684bdc2da71d8b4567");
+                        filters[0].Filter = GetItemsInCategory("5485a8684bdc2da71d8b4567");
                     }
 
                     cartridge.Properties.Filters = filters;
@@ -240,7 +248,8 @@ public class ChangeItems(
         }  
     }
 
-    private HashSet<MongoId> DeterminateSlotCategory(List<MongoId> oldList)
+    // Find attachment categories from the items originally allowed in a slot.
+    private HashSet<MongoId> GetSlotCategories(List<MongoId> oldList)
     {
         var hSet = new HashSet<MongoId>();
 
@@ -254,10 +263,11 @@ public class ChangeItems(
         return hSet;
     }
 
-    private HashSet<MongoId> LoadFromCache(string category)
+    // Reuse the list of items directly belonging to a category in our copy.
+    private HashSet<MongoId> GetItemsInCategory(string category)
     {
         if (modCache.TryGetValue(category, out var list)) return list;
-        var newList = itemHelper.GetItemTplsOfBaseType(category).ToHashSet();
+        var newList = items.Values.Where(item => item.Parent == category).Select(item => item.Id).ToHashSet();
         modCache.Add(category, newList);
         return newList;
     }

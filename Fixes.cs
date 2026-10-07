@@ -32,6 +32,7 @@ public class Fixes(
         }
     ];
 
+    // Add static-loot ammo entries for the extra calibers supported by this mod.
     public void RunFixes()
     {
         var locations = locationTable.GetDictionary();

@@ -9,9 +9,11 @@ Reimagining of the **"All In Weapon" mod by Lua**
 - Use any magazine with any weapon
 - Remove Conflicting Items - mods no longer exclude each other from being attached to the same weapon
 
+These changes are sent only to the game client. Server-side bot generation keeps normal weapon compatibility rules.
+
 ## Compatibility with SPT versions
 
-4.0.* - current version  
+4.1.2 - current target version
 
 ## Credits
 
