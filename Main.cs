@@ -5,7 +5,7 @@ using SPTarkov.Server.Core.DI;
 
 namespace AllinWeaponUnslotted;
 
-[Injectable(TypePriority = OnLoadOrder.PostLoad + 97223)]
+[Injectable(TypePriority = OnLoadOrder.PostLoad + 100101)]
 public class AllinWeaponUnslotted(
     CustomLogger logger,
     PlayerItemTemplates playerItemTemplates,
