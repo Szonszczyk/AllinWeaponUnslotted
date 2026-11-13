@@ -14,8 +14,18 @@ public class PlayerItemTemplates(
     HttpResponseUtil httpResponseUtil
 )
 {
-    // Null when the mod is disabled; the router then keeps SPT's original response.
+    // Null when the mod is disabled; the router then returns SPT's normal item data.
     public string? Response { get; private set; }
+
+    // Keep an existing response when disabled, or serialize normal server items if no router supplied one.
+    public string GetResponse(string? originalResponse)
+    {
+        if (Response is not null) return Response;
+        if (!string.IsNullOrEmpty(originalResponse)) return originalResponse;
+
+        // Use the same serializer as Prepare, without depending on DataCallbacks method signatures.
+        return httpResponseUtil.GetUnclearedBody(templateTable.Items);
+    }
 
     // Copy all nested item data, relax only that copy, and cache the client response.
     public void Prepare()

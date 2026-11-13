@@ -13,9 +13,9 @@ public class PlayerItemsRouter(JsonUtil jsonUtil, PlayerItemTemplates playerItem
         [
             new RouteAction<EmptyRequestData>(
                 "/client/items",
-                // Send relaxed templates to the client, or keep the original when disabled.
+                // Return relaxed data when enabled, or a complete normal item response when disabled.
                 (url, info, sessionId, output, cancellationToken) =>
-                    new ValueTask<string>(playerItemTemplates.Response ?? output ?? string.Empty)
+                    new ValueTask<string>(playerItemTemplates.GetResponse(output))
             )
         ]
     ) { }
